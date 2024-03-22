@@ -119,19 +119,26 @@ impl Hasher for Sha256Hasher {
 }
 
 impl ShaInternal for Sha256Hasher {
-    fn compress(&mut self) {
-        let mut w = [0u32; 64];
 
+    fn expand(&self) -> [u32; 64] {
+        let mut w = [0u32; 64];
+    
         // load the message schedule
         for i in 0..16 {
             let offset = i * 4;
             w[i] = u32::from_be_bytes([self.buffer[offset], self.buffer[offset+1], self.buffer[offset+2], self.buffer[offset+3]]);
         }
-
+    
         // expand the message schedule
         for i in 16..64 {
             w[i] = gamma1(w[i-2]).wrapping_add(w[i - 7]).wrapping_add(gamma0(w[i - 15])).wrapping_add(w[i - 16]);
         }
+
+        w
+    }
+
+    fn compress(&mut self) {
+        let w = self.expand();
 
         let mut a = self.state[0];
         let mut b = self.state[1];
